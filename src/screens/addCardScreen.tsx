@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, FlatList } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { validateCardDetails } from '../validation';
+import { validateCardDetails } from '../core/validation';
 import { useDispatch } from 'react-redux';
 import { addCard } from '../redux/store/creditCardSlice';
 import CustomHeader from '../components/share/customHeader';

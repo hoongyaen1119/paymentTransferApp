@@ -3,13 +3,18 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack'; 
 import PaymentScreen from './src/screens/paymentScreen';
 import AddCardScreen from './src/screens/addCardScreen';
+import StripePaymentScreen from './src/screens/stripePaymentScreen';
 import { Provider } from 'react-redux';
 import store from './src/redux/store/store';
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 const Stack = createStackNavigator();
 
-const App = () => {  
+const App = () => {
+  const [publishableKey, setPublishableKey] = useState('pk_test_51QNV3YLaBrjzRD5YUcvNnXxonnTfxJf1iaJ08ZmIRgQ5y4DyWpF0ZbxGwDNzrpMlo3HBdmyQc2NXxs4lQuU3QFbk00HqljMHEj');
+  
   return (
+    <StripeProvider publishableKey={publishableKey}>
       <Provider store={store}>
         <NavigationContainer>
           <Stack.Navigator initialRouteName="Payment">
@@ -32,6 +37,7 @@ const App = () => {
           </Stack.Navigator>
         </NavigationContainer>
       </Provider>
+    </StripeProvider>
   );
 };
 
