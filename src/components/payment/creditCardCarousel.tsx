@@ -1,26 +1,35 @@
 import React, {useState} from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../redux/store/store';
 
 interface CreditCardData {
   id: string;
-  cardNumber: string;
-  cardHolder: string;
-  expirationDate: string;
+  brand: string;
+  complete: boolean;
+  expiryMonth: number;
+  expiryYear: number;
+  last4: string;
+  postalCode: string;
+  validCVC: string;
+  validExpiryDate: string;
+  validNumber: string;
 }
 
 interface CardSliderProps {
-  data: CreditCardData[];
   onCardPress: (item: CreditCardData) => void; 
 }
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const CreditCardCarousel: React.FC<CardSliderProps> = ({ data, onCardPress }) => {
+const CreditCardCarousel: React.FC<CardSliderProps> = ({ onCardPress }) => {
+  const creditCard = useSelector((state: RootState) => state.creditCard.cards); 
+
   const [cardSelected, setCardSelected] = useState(null);
 
   const selectItem = (index) =>{
-    console.log("sabdkajsbdkjabks",index)
     onCardPress(index) 
     setCardSelected(index)
   }
@@ -29,20 +38,28 @@ const CreditCardCarousel: React.FC<CardSliderProps> = ({ data, onCardPress }) =>
     <TouchableOpacity onPress={() => selectItem(index)} style={[styles.cardContainer,{backgroundColor: cardSelected!=index ? "#adacac":"#014766"}]}>
       <View style={styles.cardContent}>
         <View style={{flexDirection:"row",justifyContent:"space-between", alignItems:"center"}}>
-            <Text style={styles.cardHolder}>{item.cardHolder}</Text>
-            {
-              cardSelected===index ? 
-              <View style={{width:30,height:30, backgroundColor:"green", borderRadius:30, alignItems:"center", justifyContent:"center"}}>
-                <Icon name={"done"} size={24} color="white" />
-              </View>
-              :null
-            }
+          {
+            item.brand==="mastercard" ?
+            <FontAwesome name={"cc-mastercard"} size={24} color={cardSelected!=index ? null:"white"}/>
+            :
+            item.brand==="visa" ?
+            <FontAwesome name={"cc-visa"} size={24} color={cardSelected!=index ? null:"white"}/>
+            :
+            <FontAwesome name={"credit-card"} size={24} color={cardSelected!=index ? null:"white"}/>
+          }
+          {
+            cardSelected===index ? 
+            <View style={{width:30,height:30, backgroundColor:"green", borderRadius:30, alignItems:"center", justifyContent:"center"}}>
+              <MaterialIcons name={"done"} size={24} color="white" />
+            </View>
+            :null
+          }
         </View>
         <View>
           <Text style={styles.cardNumber}>
-          **** **** **** {item.cardNumber.slice(-4)}
+          **** **** **** {item.last4}
           </Text>
-          <Text style={styles.expirationDate}>Exp: {item.expirationDate}</Text>
+          <Text style={styles.expirationDate}>Exp: {item.expiryMonth + "/" + item.expiryYear}</Text>
         </View>
         
       </View>
@@ -52,9 +69,9 @@ const CreditCardCarousel: React.FC<CardSliderProps> = ({ data, onCardPress }) =>
   return (
     <View style={styles.sliderContainer}>
       {
-        data && data.length>0 ?
+        creditCard && creditCard.length>0 ?
         <FlatList
-          data={data}
+          data={creditCard}
           horizontal
           renderItem={renderItem}
           showsHorizontalScrollIndicator={false}
@@ -66,7 +83,7 @@ const CreditCardCarousel: React.FC<CardSliderProps> = ({ data, onCardPress }) =>
         :
         <View style={{justifyContent: 'center',width:screenWidth, alignItems:"center"}}>
           <TouchableOpacity onPress={() => {}} style={styles.emptyCardContainer}>
-            <Icon name={"add"} size={30} color="white" />
+            <MaterialIcons name={"add"} size={30} color="white" />
             <Text style={styles.cardHolder}>{"Setup a payment card"}</Text>
           </TouchableOpacity>
         </View>

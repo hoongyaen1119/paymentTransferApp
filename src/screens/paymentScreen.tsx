@@ -1,31 +1,41 @@
 import React, { useState } from 'react';
-import { Button, Text, Alert, SafeAreaView, StyleSheet, TextInput, View } from 'react-native';
-import axios from 'axios';
-import { useNavigation } from '@react-navigation/native'; // Import the navigation hook
+import {  SafeAreaView, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import CustomHeader from '../components/share/customHeader';
 import CreditCardCarousel from '../components/payment/creditCardCarousel';
 import TransactionList from '../components/payment/transaction/transactionList';
 import PaymentModal from '../components/payment/paymentModal';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../redux/store/store'; // Import RootState to type the selector
-
-const sampleTransactions = [
-  { id: '1', date: '2024-11-21', amount: '100', recipient: 'John Doe', status: 'Success' },
-  { id: '2', date: '2024-11-20', amount: '50', recipient: 'Jane Smith', status: 'Failed' },
-  { id: '3', date: '2024-11-18', amount: '200', recipient: 'Alex Johnson', status: 'Success' },
-  { id: '4', date: '2024-11-21', amount: '100', recipient: 'John Doe', status: 'Success' },
-  { id: '5', date: '2024-11-20', amount: '50', recipient: 'Jane Smith', status: 'Failed' },
-  { id: '6', date: '2024-11-18', amount: '200', recipient: 'Alex Johnson', status: 'Success' }
-];
+import { RootState } from '../redux/store/store';
+import { fetchCards } from '../redux/store/creditCardSlice';
+import { signOut } from '../redux/store/authSlice';
+import Action from '../actions/index'
+import SuccessModal from '../components/share/successModal';
+import ErrorModal from '../components/share/errorModal';
 
 const PaymentScreen = () => {
-  const creditCard = useSelector((state: RootState) => state.creditCard); // Get card details from Redux
+  const dispatch = useDispatch();
+  const creditCard = useSelector((state: RootState) => state.creditCard); 
+  const userDetails = useSelector((state: RootState) => state.auth);
+  const transactions = useSelector((state: RootState) => state.transaction.transactions);
 
   const [selectedCard, setSelectedCard] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [messageModalVisible, setMessageModalVisible] = useState(null);
 
-  const navigation = useNavigation(); // Use navigation hook
+  const navigation = useNavigation();
 
+  React.useEffect(() => {
+    async function fetchFunction() {
+      await dispatch (Action.fetchPaymentMethod(userDetails.user.id))
+      dispatch(Action.fetchAllPayment(userDetails.user.id))
+    }
+    fetchFunction()
+  }, []);
+
+  const modalAction = (action) => {
+    setMessageModalVisible(action)
+  };
 
   const showModal = () => {
     setModalVisible(true);
@@ -40,21 +50,35 @@ const PaymentScreen = () => {
     showModal()   
   };
 
-  const addCard = () => {
+  const toAddCard = () => {
     navigation.navigate('AddCard'); 
+  };
+
+  const logout = () => {
+    dispatch(signOut());
+    navigation.goBack()
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <CustomHeader title="Payment" rightIcon="add" onRightPress={addCard} iconType="MaterialIcons" />
-      <CreditCardCarousel data={creditCard.cards} onCardPress={handleCardPress} />
-      <TransactionList transactions={sampleTransactions} />
+      <CustomHeader title="Payment" leftIcon="logout" onLeftPress={logout} rightIcon="add" onRightPress={toAddCard} iconType="MaterialIcons" />
+      <CreditCardCarousel onCardPress={handleCardPress} />
+      <TransactionList transactions={transactions} />
       <PaymentModal 
         visible={modalVisible}
+        modalAction={modalAction}
         onClose={hideModal}
         selectedCard={selectedCard}
-        setSelectedCard={setSelectedCard}
       />
+      {
+        messageModalVisible ?
+        <SuccessModal modalAction={modalAction}/>
+        :
+        messageModalVisible==false ?
+        <ErrorModal modalAction={modalAction}/>
+        :null
+      }
+
     </SafeAreaView>
   );
 };

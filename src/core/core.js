@@ -1,0 +1,6 @@
+const STRIPE_SECRET_KEY = 'sk_test_51QNV3YLaBrjzRD5YHy2WR3N5fMXwnYfYn2blMsEYisBbCqlyIHfV3zkibTj2uxvxyhL4bpUVkFxXd3A4wBVwZkVO00mCPvYBxT';
+const PUBLISHABLE_KEY = 'pk_test_51QNV3YLaBrjzRD5YUcvNnXxonnTfxJf1iaJ08ZmIRgQ5y4DyWpF0ZbxGwDNzrpMlo3HBdmyQc2NXxs4lQuU3QFbk00HqljMHEj'
+export default{
+    stripe_secret_key:STRIPE_SECRET_KEY,
+    publishable_key:PUBLISHABLE_KEY
+}

@@ -1,60 +1,53 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { validateCardDetails } from '../core/validation';
-import { useDispatch } from 'react-redux';
-import { addCard } from '../redux/store/creditCardSlice';
+import { fetchCards } from '../redux/store/creditCardSlice';
 import CustomHeader from '../components/share/customHeader';
+import Action from '../actions/index'
+import { useStripe, CardField} from '@stripe/stripe-react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../redux/store/store';
 
-// Define the types for the form fields
 interface CreditCardDetails {
-  cardNumber: string;
-  expirationDate: string;
-  cvv: string;
+  id: string;
+  brand: string;
+  complete: boolean;
+  expiryMonth: number;
+  expiryYear: number;
+  last4: string;
+  postalCode: string;
+  validCVC: string;
+  validExpiryDate: string;
+  validNumber: string;
 }
 
-const AddCardScreen: React.FC = () => {
+const AddCardScreen = () => {  
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const { createPaymentMethod } = useStripe();
+  const userDetails = useSelector((state: RootState) => state.auth);
+  const [loading, setLoading] = useState(false);
+  const [creditCardDetails, setCreditCardDetails] = useState<CreditCardDetails>();
 
-  // Initialize the form with an empty card
-  const [creditCardDetails, setCreditCardDetails] = useState<CreditCardDetails>({
-    cardNumber: '',
-    expirationDate: '',
-    cvv: '',
-  });
-
-  // Handle text input changes
-  const handleInputChange = (field: keyof CreditCardDetails, value: string) => {
-    setCreditCardDetails((prevDetails) => ({
-      ...prevDetails,
-      [field]: value,
-    }));
-  };
-
-  // Validate the credit card details
-  const validateCard = () => {
-    return validateCardDetails(creditCardDetails);
-  };
-
-  // Handle form submission
-  const handleSubmit = () => {
-    const errorMessage = validateCard();
-
-    if (errorMessage) {
-      Alert.alert('Error', errorMessage);
+  const handleSubmit = async() => {
+    console.log("creditCardDetailscreditCardDetails",creditCardDetails)
+    if (!creditCardDetails) {
+      Alert.alert('Please enter all the required fields');
       return;
     }
+    setLoading(true)
+    let paymentMethodId = await Action.createPaymentMethod(creditCardDetails,createPaymentMethod)
+    if(paymentMethodId){
+      await dispatch (Action.addPaymentMethodToCustomer(paymentMethodId,userDetails.user.id))
+      setLoading(false)
+      navigation.goBack()
+    }
+    
+  };
 
-    dispatch(addCard(creditCardDetails));
-    navigation.goBack()
-
-    // Reset the form fields after submission
-    setCreditCardDetails({
-      cardNumber: '',
-      expirationDate: '',
-      cvv: '',
-    });
+  const handleCardChange = (cardDetails) => {
+    console.log("sakdbsakjbdkasd",cardDetails)
+    setCreditCardDetails(cardDetails);
   };
 
   return (
@@ -69,51 +62,34 @@ const AddCardScreen: React.FC = () => {
         <Text style={{ textAlign: "center", color: "white" }}>
           {"Verify and complete your card information"}
         </Text>
-        <View style={styles.form}>
-          {/* Card Number Input */}
-          <TextInput
-            style={styles.input}
-            placeholder="Enter card number"
-            keyboardType="numeric"
-            value={creditCardDetails.cardNumber}
-            onChangeText={(value) => handleInputChange('cardNumber', value)}
-            placeholderTextColor={"grey"}
-            maxLength={16}
-          />
-
-          {/* Expiration Date Input (MM/YY format) */}
-          <TextInput
-            style={styles.input}
-            placeholder="Expiration Date (MM/YY)"
-            keyboardType="numeric"
-            value={creditCardDetails.expirationDate}
-            onChangeText={(value) => handleInputChange('expirationDate', value)}
-            placeholderTextColor={"grey"}
-            maxLength={5}
-          />
-
-          {/* CVV Input */}
-          <TextInput
-            style={styles.input}
-            placeholder="CVV"
-            keyboardType="numeric"
-            value={creditCardDetails.cvv}
-            onChangeText={(value) => handleInputChange('cvv', value)}
-            placeholderTextColor={"grey"}
-            maxLength={3}
-          />
-        </View>
-
-        {/* Submit Button */}
-        <TouchableOpacity onPress={handleSubmit} style={styles.addButton}>
-          <Text style={styles.addText}>Add</Text>
-        </TouchableOpacity>
+        <CardField
+          postalCodeEnabled={true}
+          placeholders={{
+            number: '4242 4242 4242 4242',
+          }}
+          onCardChange={handleCardChange}
+          style={{
+            width: '100%',
+            height: 50,
+            marginVertical: 30,
+            backgroundColor: '#7d7c7c',
+          }}
+        />
+        {
+          loading ?
+          <View style={styles.addButton}>
+            <ActivityIndicator />
+          </View>
+          :
+          <TouchableOpacity onPress={handleSubmit} style={styles.addButton}>
+            <Text style={styles.addText}>Add</Text>
+          </TouchableOpacity>
+        }
       </View>
     </SafeAreaView>
   );
 };
 
-// Styles for the form
 const styles = StyleSheet.create({
   container: {
     flex: 1,

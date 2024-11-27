@@ -1,27 +1,54 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, Button, Animated, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import axios from 'axios';
+import { View, Text, TextInput, Animated, TouchableOpacity, StyleSheet,Platform, Alert, ActivityIndicator, TouchableWithoutFeedback, KeyboardAvoidingView, Keyboard } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useStripe, CardField } from '@stripe/stripe-react-native';
+import BiometricAuth from '../share/biometricAuth';
+import Action from '../../actions/index'
+import { RootState } from '../../redux/store/store';
+import { useDispatch, useSelector } from 'react-redux';
 
 interface PaymentModalProps {
   visible: boolean;
+  modalAction: () => void; 
   onClose: () => void;
-  selectedCard: { cardNumber: string; expirationDate: string; cvc:string } | null;
-  setSelectedCard: React.Dispatch<React.SetStateAction<any>>;
+  selectedCard: { 
+    id: string;
+    brand: string;
+    complete: boolean;
+    expiryMonth: number;
+    expiryYear: number;
+    last4: string;
+    postalCode: string;
+    validCVC: string;
+    validExpiryDate: string;
+    validNumber: string;
+  } | null;
 }
 
-// const STRIPE_PUBLISHABLE_KEY = 'pk_test_51QNV3YLaBrjzRD5YUcvNnXxonnTfxJf1iaJ08ZmIRgQ5y4DyWpF0ZbxGwDNzrpMlo3HBdmyQc2NXxs4lQuU3QFbk00HqljMHEj';
-// const STRIPE_SECRET_KEY = 'sk_test_51QNV3YLaBrjzRD5YHy2WR3N5fMXwnYfYn2blMsEYisBbCqlyIHfV3zkibTj2uxvxyhL4bpUVkFxXd3A4wBVwZkVO00mCPvYBxT';
+const PaymentModal: React.FC<PaymentModalProps> = ({ visible, modalAction, onClose, selectedCard }) => {
+  const dispatch = useDispatch();
 
-
-const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onClose, selectedCard, setSelectedCard }) => {
   const [amount, setAmount] = useState('');
-  const [recipient, setRecipient] = useState('');
+  const [description, setDescription] = useState('');
   const translateY = useRef(new Animated.Value(500)).current;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { createPaymentMethod, confirmPayment } = useStripe();
-  const [cardDetails, setCardDetails] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const userDetails = useSelector((state: RootState) => state.auth);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  React.useEffect(() => {
+    if(Platform.OS==="ios"){
+      const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+        setKeyboardVisible(true);
+      });
+      const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+        setKeyboardVisible(false);
+      });
+      return () => {
+        keyboardDidShowListener.remove();
+        keyboardDidHideListener.remove();
+      };
+    }
+  }, []);
 
   React.useEffect(() => {
     if (visible) {
@@ -38,158 +65,110 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, onClose, selectedC
   }, [visible]);
 
   const handleAuthenticated = () => {
-    // setIsAuthenticated(true);
-    initiatePayment()
+    setIsAuthenticated(true);
   };
 
-  const clearInput = () => {
-    setRecipient('')
+  const clearField = () => {
     setAmount('')
+    setDescription('')
+    setLoading(false)
   }
 
-  // const handleCardChange = (cardDetails) => {
-  //   setCardDetails(cardDetails);
-  // };
-
-  // const createPaymentMethodAction = async() => {
-  //   try {
-  //     const { error, paymentMethod } = await createPaymentMethod({
-  //       paymentMethodType: 'Card', 
-  //       card: cardDetails,
-  //     });
-  //     if (error) {
-  //       alert(`Error: ${error.message}`);
-  //       return;
-  //     }else{
-  //       return paymentMethod.id
-  //     }
-  //   } catch (error) {
-  //     alert('Payment failed. Please try again.');
-  //   }
-  // }
-
-  // const confirmPaymentAction = async() =>{
-  //   const clientSecret = "pi_3QOwx5LaBrjzRD5Y2VVw9m1K_secret_1ZLZI37LbESSu6SaYw1QwncaH"; 
-  //   const { error: confirmError, paymentIntent } = await confirmPayment(clientSecret, {
-  //     paymentMethodType: 'Card',
-  //     paymentMethodId: "pm_1QNVloLaBrjzRD5YnhAgLKIw",
-  //   });
-  //   console.log("jkdjhsakdhkasda",confirmError)
-
-  //   if (confirmError) {
-  //     console.log("Payment Confirmation Error:", confirmError);
-  //     alert(`Payment failed: ${confirmError.message}`);
-  //   } else if (paymentIntent) {
-  //     console.log("Payment successful!", paymentIntent);
-  //     alert('Payment Successful!');
-  //   }
-  // }
-
-  // const getAllPaymentIntent = async() =>{
-  //   try {
-  //     const response = await axios.get('https://api.stripe.com/v1/payment_intents', {
-  //       headers: {
-  //         Authorization: `Bearer ${STRIPE_SECRET_KEY}`, // Authentication
-  //       },
-  //     });
+  const closeModal = () => {
+    clearField()
+    onClose()
+    Keyboard.dismiss()
+  }
   
-  //     console.log('Transactions:', response.data);
-  //   } catch (error) {
-  //     console.error('Error fetching transactions:', error.response?.data || error.message);
-  //   }
-  // }
-
-  // const createPaymentIntentAction = async() => {
-  //   const paymentIntentResponse = await axios.post(
-  //     'https://api.stripe.com/v1/payment_intents',
-  //     {
-  //       amount: parseInt(amount)*100, 
-  //       currency: 'myr',
-  //       payment_method_types: ['card'], 
-  //     },
-  //     {
-  //       headers: {
-  //         Authorization: `Bearer ${STRIPE_SECRET_KEY}`, 
-  //         'Content-Type': 'application/x-www-form-urlencoded',
-  //       },
-  //     }
-  //   )
-  //   const clientSecret = paymentIntentResponse.data.client_secret;
-  //   return clientSecret
-  // }
-
   const initiatePayment = async () => {
-    if (!amount || !recipient || !selectedCard) {
+    if (!amount || !description || !selectedCard) {
       Alert.alert('Invalid Input', 'Please enter all the required fields');
       return;
     }
+    setLoading(true)
+    
     try {
-      // getAllPaymentIntent()
-      //let getPaymentIntentId = await createPaymentIntentAction()
-      // let getPaymentMethodId = await createPaymentMethodAction()
-      // confirmPaymentAction()
-      
+      let params = {
+        customer: userDetails.user.id,
+        amount: parseInt(amount)*100, 
+        currency: 'myr',
+        description: description,
+        payment_method_types: ['card'], 
+      }
+      let paymentIntentId = await Action.createPayment(params)
+      let createPayment = Action.submitPayment(paymentIntentId,selectedCard.id,userDetails.user.id)
+      let rslt = await dispatch(createPayment)
+      if(rslt && !rslt.error){
+        setLoading(false)
+        clearField()
+        onClose()
+        modalAction(true)
+      }else{
+        modalAction(false)
+      }
     } catch (error) {
       console.log('Payment Failed', error.response.data);
     }
   };
 
   return (
-    <Animated.View style={[styles.modalContainer, { transform: [{ translateY }] }]}>
-      <View style={styles.modalContent}>
-        <View style={{flexDirection:"row", justifyContent:"space-between"}}>
-            <Text style={styles.modalTitle}>Payment Details</Text>
-            <TouchableOpacity onPress={onClose}>
-                <Icon name={"close"} size={24} color="black" />
-            </TouchableOpacity>
-        </View>
-        <View style={{marginVertical:10}}>
-          <TextInput
-          style={styles.input}
-          placeholder="Enter Amount (RM)"
-          keyboardType="numeric"
-          value={amount}
-          onChangeText={setAmount}
-          />
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <KeyboardAvoidingView
+        style={styles.modalContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        enabled
+      >
+        <Animated.View style={[styles.modalContainer, { transform: [{ translateY }] }]}>
+          <View style={[styles.modalContent,{height: keyboardVisible ? 250:null}]}>
+            <View style={{flexDirection:"row", justifyContent:"space-between"}}>
+              <Text style={styles.modalTitle}>Payment Details</Text>
+              <TouchableOpacity onPress={()=>closeModal()}>
+                  <Icon name={"close"} size={24} color="black" />
+              </TouchableOpacity>
+            </View>
+            <View style={{marginVertical:10}}>
+              <TextInput
+              style={styles.input}
+              placeholderTextColor={'grey'}
+              placeholder="Enter Amount (RM)"
+              keyboardType="numeric"
+              value={amount}
+              onChangeText={setAmount}
+              />
+              <TextInput
+              style={styles.input}
+              placeholderTextColor={'grey'}
+              placeholder="Enter Payment Reference"
+              value={description}
+              onChangeText={setDescription}
+              />
+            </View>
 
-          <TextInput
-          style={styles.input}
-          placeholder="Enter Recipient"
-          value={recipient}
-          onChangeText={setRecipient}
-          />
-        </View>
-
-        <Text style={styles.selectedCardText}>
-          {selectedCard ? `Selected Card:  **** **** **** ${selectedCard.cardNumber.slice(-4)}` : 'No card selected'}
-        </Text>
-
-        {/* {!isAuthenticated ? (
-          !amount || !recipient ?
-          null
-          :
-          <BiometricAuth onAuthenticated={handleAuthenticated} />
-        ) : ( */}
-          <TouchableOpacity onPress={initiatePayment} style={styles.transferModalButton}>
-            <Text style={styles.transferModalText}>Transfer</Text>
-          </TouchableOpacity>
-        {/* )} */}
-
-        <CardField
-          postalCodeEnabled={true}
-          placeholders={{
-            number: '4242 4242 4242 4242',
-          }}
-          onCardChange={handleCardChange}
-          style={{
-            width: '100%',
-            height: 50,
-            marginVertical: 30,
-          }}
-        />
-        
-      </View>
-    </Animated.View>
+            <Text style={styles.selectedCardText}>
+              {selectedCard ? `Selected Card:  **** **** **** ${selectedCard.last4}` : 'No card selected'}
+            </Text>
+            {
+              !isAuthenticated ? (
+                !amount || !description ?
+                null
+                :
+                <BiometricAuth onAuthenticated={handleAuthenticated} />
+              ) : (
+                <TouchableOpacity onPress={initiatePayment} style={styles.transferModalButton}>
+                  {
+                    loading ?
+                    <ActivityIndicator />
+                    :
+                    <Text style={styles.transferModalText}>Pay</Text>
+                  }
+                </TouchableOpacity>
+              )
+            }
+            
+          </View>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -198,6 +177,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     alignItems: 'center',
+    width: '100%',
   },
   modalContent: {
     width: '100%',
@@ -219,6 +199,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingLeft: 10,
     borderRadius: 5,
+    color:"black"
   },
   selectedCardText: {
     fontSize: 16,

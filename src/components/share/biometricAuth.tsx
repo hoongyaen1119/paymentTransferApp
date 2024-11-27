@@ -12,7 +12,6 @@ const BiometricAuth = ({ onAuthenticated }: { onAuthenticated: () => void }) => 
   React.useEffect(() => {
     async function fetchFunction() {
       try{
-        
         const isAvailable = await rnBiometrics.isSensorAvailable();
         if(isAvailable.available){
           setBiometricSupported(true);
@@ -51,7 +50,6 @@ const BiometricAuth = ({ onAuthenticated }: { onAuthenticated: () => void }) => 
         <Text>Checking biometric sensor...</Text>
       ) : biometricSupported ? (
         <>
-          <Text>Biometrics supported. Please authenticate.</Text>
           <Button title="Authenticate" onPress={authenticateUser} />
         </>
       ) : (

@@ -1,16 +1,17 @@
-// TransactionList.tsx
 import React from 'react';
 import { View, FlatList, StyleSheet, Text, Dimensions } from 'react-native';
 import TransactionItem from './transactionItem';
 
-const { height, width } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 interface Transaction {
   id: string;
-  date: string;
-  amount: string;
-  recipient: string;
+  amount: number;
+  currency: string;
+  description: string;
   status: string;
+  customer: string;
+  created: string;
 }
 
 interface TransactionListProps {
