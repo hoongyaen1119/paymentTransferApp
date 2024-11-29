@@ -8,7 +8,7 @@ interface SuccessModalProps {
 const SuccessModal: React.FC<SuccessModalProps> = ({ modalAction}) => {
 
     const hideModal = () => {
-        modalAction(null)
+      modalAction(null)
     };
 
     return (
@@ -22,7 +22,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ modalAction}) => {
                 <View style={styles.modalBackground}>
                     <View style={styles.modalContainer}>
                         <Text style={styles.successText}>Thank you!</Text>
-                        <Image source={require("../../assets/gif/payment_done.gif")} style={styles.image}/>
+                        <Image source={require("../../assets/image/payment_done.png")} style={styles.image} resizeMode="contain"/>
                         <Text style={styles.successText}>Payment done successfully.</Text>
                         <TouchableOpacity style={styles.closeButton} onPress={hideModal}>
                             <Text style={styles.closeButtonText}>Close</Text>
@@ -56,6 +56,7 @@ const styles = StyleSheet.create({
   successText: {
     fontSize: 18,
     fontWeight: 'bold',
+    color:"green"
   },
   closeButton: {
     backgroundColor: '#014766',

@@ -5,6 +5,8 @@ import BiometricAuth from '../share/biometricAuth';
 import Action from '../../actions/index'
 import { RootState } from '../../redux/store/store';
 import { useDispatch, useSelector } from 'react-redux';
+import { fetchAllPayment } from '../../actions/payment';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface PaymentModalProps {
   visible: boolean;
@@ -22,14 +24,16 @@ interface PaymentModalProps {
     validExpiryDate: string;
     validNumber: string;
   } | null;
+  ewalletBalance?: boolean;
+  ewalletAmountAction?: () => void;
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ visible, modalAction, onClose, selectedCard }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ visible, modalAction, onClose, selectedCard, ewalletBalance, ewalletAmountAction }) => {
   const dispatch = useDispatch();
 
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const translateY = useRef(new Animated.Value(500)).current;
+  const [recipientName, setRecipientName] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const userDetails = useSelector((state: RootState) => state.auth);
@@ -50,20 +54,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, modalAction, onClo
     }
   }, []);
 
-  React.useEffect(() => {
-    if (visible) {
-      Animated.spring(translateY, {
-        toValue: 0, 
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.spring(translateY, {
-        toValue: 500, 
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [visible]);
-
   const handleAuthenticated = () => {
     setIsAuthenticated(true);
   };
@@ -71,12 +61,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, modalAction, onClo
   const clearField = () => {
     setAmount('')
     setDescription('')
+    setRecipientName('')
     setLoading(false)
   }
 
   const closeModal = () => {
     clearField()
     onClose()
+    setIsAuthenticated(false);
     Keyboard.dismiss()
   }
   
@@ -96,8 +88,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, modalAction, onClo
         payment_method_types: ['card'], 
       }
       let paymentIntentId = await Action.createPayment(params)
-      let createPayment = Action.submitPayment(paymentIntentId,selectedCard.id,userDetails.user.id)
-      let rslt = await dispatch(createPayment)
+      let createPaymentIntent = Action.submitPayment(paymentIntentId,selectedCard.id,userDetails.user.id)
+      let rslt = await dispatch(createPaymentIntent)
       if(rslt && !rslt.error){
         setLoading(false)
         clearField()
@@ -106,7 +98,46 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, modalAction, onClo
       }else{
         modalAction(false)
       }
+      setIsAuthenticated(false);
     } catch (error) {
+      setIsAuthenticated(false);
+      console.log('Payment Failed', error.response.data);
+    }
+  };
+
+  const transferPayment = async () => {
+    if (!amount || !recipientName ) {
+      Alert.alert('Invalid Input', 'Please enter all the required fields');
+      return;
+    }else if ((parseInt(amount)*100) > ewalletBalance) {
+      Alert.alert('Insufficient balance. Please add funds to your wallet.');
+      return;
+    }
+    setLoading(true)
+    
+    try {
+      let params = {
+        customer: userDetails.user.id,
+        amount: parseInt(amount)*100, 
+        currency: 'myr',
+        metadata: { recipient_name: recipientName }
+      }
+      let rslt = await Action.createPayment(params)
+      if(rslt && !rslt.error){
+        let ewallet_balance = ewalletBalance-(parseInt(amount)*100)
+        AsyncStorage.setItem('ewallet_balance', JSON.stringify(ewallet_balance));
+        ewalletAmountAction(ewallet_balance)
+        dispatch(fetchAllPayment(userDetails.user.id))
+        setLoading(false)
+        clearField()
+        onClose()
+        modalAction(true)
+      }else{
+        modalAction(false)
+      }
+      setIsAuthenticated(false);
+    } catch (error) {
+      setIsAuthenticated(false);
       console.log('Payment Failed', error.response.data);
     }
   };
@@ -114,12 +145,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, modalAction, onClo
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <KeyboardAvoidingView
-        style={styles.modalContainer}
+        style={[styles.modalContainer,{justifyContent: keyboardVisible ? 'flex-end':'flex-start'}]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         enabled
       >
-        <Animated.View style={[styles.modalContainer, { transform: [{ translateY }] }]}>
-          <View style={[styles.modalContent,{height: keyboardVisible ? 250:null}]}>
+        <Animated.View style={[styles.modalContainer, { justifyContent: keyboardVisible ? 'flex-end':'flex-start'}]}>
+          <View style={[styles.modalContent,{height: keyboardVisible ? 300:null}]}>
             <View style={{flexDirection:"row", justifyContent:"space-between"}}>
               <Text style={styles.modalTitle}>Payment Details</Text>
               <TouchableOpacity onPress={()=>closeModal()}>
@@ -135,34 +166,66 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, modalAction, onClo
               value={amount}
               onChangeText={setAmount}
               />
-              <TextInput
-              style={styles.input}
-              placeholderTextColor={'grey'}
-              placeholder="Enter Payment Reference"
-              value={description}
-              onChangeText={setDescription}
-              />
-            </View>
-
-            <Text style={styles.selectedCardText}>
-              {selectedCard ? `Selected Card:  **** **** **** ${selectedCard.last4}` : 'No card selected'}
-            </Text>
-            {
-              !isAuthenticated ? (
-                !amount || !description ?
-                null
+              {
+                !ewalletBalance ?
+                <TextInput
+                  style={styles.input}
+                  placeholderTextColor={'grey'}
+                  placeholder="Enter Payment Reference"
+                  value={description}
+                  onChangeText={setDescription}
+                />
                 :
-                <BiometricAuth onAuthenticated={handleAuthenticated} />
-              ) : (
-                <TouchableOpacity onPress={initiatePayment} style={styles.transferModalButton}>
-                  {
-                    loading ?
-                    <ActivityIndicator />
-                    :
-                    <Text style={styles.transferModalText}>Pay</Text>
-                  }
-                </TouchableOpacity>
-              )
+                <TextInput
+                  style={styles.input}
+                  placeholderTextColor={'grey'}
+                  placeholder="Enter Recipient Name"
+                  value={recipientName}
+                  onChangeText={setRecipientName}
+                />
+              }
+              
+            </View>
+            {
+              !ewalletBalance && selectedCard ?
+              <Text style={styles.selectedCardText}>
+                Selected Card:  **** **** **** ${selectedCard.last4}
+              </Text>
+              :null
+            }
+            
+            {
+              !ewalletBalance ?
+                !isAuthenticated ? (
+                  !amount || !description ?
+                  null
+                  :
+                  <BiometricAuth onAuthenticated={handleAuthenticated} />
+                ) : (
+                  <TouchableOpacity onPress={initiatePayment} style={styles.transferModalButton}>
+                    {
+                      loading ?
+                      <ActivityIndicator />
+                      :
+                      <Text style={styles.transferModalText}>Pay</Text>
+                    }
+                  </TouchableOpacity>
+                )
+               :
+               !isAuthenticated ? (
+                  !amount || !recipientName ?
+                  null
+                  :
+                  <BiometricAuth onAuthenticated={handleAuthenticated} />
+                ) : 
+                  <TouchableOpacity onPress={transferPayment} style={styles.transferModalButton}>
+                    {
+                      loading ?
+                      <ActivityIndicator />
+                      :
+                      <Text style={styles.transferModalText}>Transfer</Text>
+                    }
+                  </TouchableOpacity> 
             }
             
           </View>
@@ -175,7 +238,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ visible, modalAction, onClo
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    justifyContent: 'flex-end',
     alignItems: 'center',
     width: '100%',
   },

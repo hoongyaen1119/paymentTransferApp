@@ -1,5 +1,6 @@
 import { Alert } from "react-native";
 import Service from '../services'; 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const checkExistingCustomer = async (email) => {
   let rslt = await Service.checkCustomerExists(email)
@@ -26,6 +27,7 @@ export const createNewCustomer = async(params) => {
     if(rslt.error){
       return rslt
     }else{
+      AsyncStorage.setItem("ewallet_balance",JSON.stringify(10000))
       return rslt
     }
   }else{

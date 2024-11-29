@@ -20,8 +20,8 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ modalAction}) => {
           >
             <View style={styles.modalBackground}>
               <View style={styles.modalContainer}>
-                <Text style={styles.errorText}>Thank you!</Text>
-                <Image source={require("../../assets/gif/payment_failed.gif")} style={styles.image}/>
+                <Text style={styles.errorText}>Payment Failed!</Text>
+                <Image source={require("../../assets/image/payment_failed.png")} style={styles.image}/>
                 <Text style={styles.errorText}>Payment Failed.</Text>
                 <TouchableOpacity style={styles.closeButton} onPress={hideModal}>
                   <Text style={styles.closeButtonText}>Close</Text>
@@ -55,6 +55,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 18,
     fontWeight: 'bold',
+    color:"red"
   },
   closeButton: {
     backgroundColor: '#014766',

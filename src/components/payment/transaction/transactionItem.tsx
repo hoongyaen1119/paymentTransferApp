@@ -11,17 +11,21 @@ interface TransactionItemProps {
     status: string;
     customer: string;
     created: string;
+    recipientName: string;
   };
 }
 
 const TransactionItem: React.FC<TransactionItemProps> = ({ transaction }) => {
+  const date = new Date(transaction.created * 1000); 
+  const convertedFormat = moment(date.toString()).format('DD-MM-YY, hh:mm A')
   return (
     <View style={styles.transactionContainer}>
         <View style={{flexDirection:"row",justifyContent:"space-between", alignItems:"center"}}>
-          <Text style={styles.recipient}>{transaction.description? transaction.description:"Payment"}</Text>
+          <Text style={styles.recipient}>{transaction.description? transaction.description:transaction.recipientName ? "Recipient: "+transaction.recipientName:"Payment"}</Text>
             <Text style={styles.amount}>{(transaction.amount/100)+ " "+ transaction.currency.toUpperCase()}</Text>
         </View>
-      {/* <Text style={styles.date}>{moment(transaction.created).format("DD-MM-YYYY h:mm:ss")}</Text> */}
+      <Text style={styles.date}>{convertedFormat}</Text>
+      <Text style={[styles.date,{color: "green", fontWeight:"700" }]}>Success</Text>
 
     </View>
   );

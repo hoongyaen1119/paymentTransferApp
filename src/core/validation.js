@@ -1,21 +1,22 @@
-// export const validateCardDetails = (creditCardDetails) => {
-//     const { cardNumber, expirationDate, cvv } = creditCardDetails;
 
-//     if (!cardNumber || !expirationDate || !cvv) {
-//       return 'Please fill all the fields';
-//     }
-
-//     if (cardNumber.length !== 16 || !/^\d+$/.test(cardNumber)) {
-//       return 'Invalid card number. It should be 16 digits';
-//     }
-
-//     if (!/^(0[1-9]|1[0-2])\/([0-9]{2})$/.test(expirationDate)) {
-//       return 'Invalid expiration date. Format should be MM/YY';
-//     }
-
-//     if (cvv.length !== 3 || !/^\d+$/.test(cvv)) {
-//       return 'Invalid CVV. It should be 3 digits';
-//     }
-
-//     return null;
-// };
+// Validate Email Format
+export const validateEmail = (email: string): string | null => {
+    const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!email.trim()) return 'Email is required.';
+    if (!regex.test(email)) return 'Please enter a valid email address.';
+    return null;
+  };
+  
+  // Validate Password (Minimum length, contains letters, numbers, and special characters)
+  export const validatePassword = (password: string): string | null => {
+    const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,20}$/;
+    if (!password.trim()) return 'Password is required.';
+    if (!regex.test(password)) return 'Password must be 6-20 characters long, include at least one letter, one number, and one special character.';
+    return null;
+  };
+  
+  // Validate Username (Ensure it's not empty)
+  export const validateUsername = (username: string): string | null => {
+    if (!username.trim()) return 'Username is required.';
+    return null;
+  };

@@ -67,13 +67,11 @@ export const createCardPaymentMethod = async(card_details,createPaymentMethod) =
   }
 }
 
-export const confirmPayment = async(paymentIntentId,paymentMethodId) =>{
+export const confirmPayment = async(paymentIntentId,params) =>{
   try {
     const response = await axios.post(
       'https://api.stripe.com/v1/payment_intents/' + paymentIntentId + '/confirm', 
-      new URLSearchParams({
-        payment_method: paymentMethodId, 
-      }).toString(),
+      params,
       {
         headers: {
           Authorization: `Bearer ${Core.stripe_secret_key}`,
@@ -87,14 +85,15 @@ export const confirmPayment = async(paymentIntentId,paymentMethodId) =>{
       return {error: "Payment confirmation failed"}
     }
   } catch (error) {
-    return {error: error.response.data.error.code}
+    console.log("salbkdlsajbdkjbaskdsa",error.response.data.error.message)
+    return {error: error.response.data.error.message}
   }
 }
 
 export const getAllPaymentIntent = async(customerId) =>{
   try {
     const response = await axios.get('https://api.stripe.com/v1/payment_intents', {
-      params: { customer: customerId },
+      params: { customer: customerId, limit: 100 },
       headers: {
         Authorization: `Bearer ${Core.stripe_secret_key}`, 
       },

@@ -17,9 +17,11 @@ const AuthScreen = () => {
   const handleSignIn = async() => {
     if (username && email && password) {
       let id = await Action.createNewCustomer({email:email, name:username})
-      if(id){
+      if(id && !id.error){
         dispatch(signIn({ username, email, id }));
         navigation.navigate('Payment'); 
+      }else{
+        Alert.alert('Invalid Email');
       }
     } else {
       Alert.alert('Please fill out all fields');
@@ -35,7 +37,6 @@ const AuthScreen = () => {
           <Text style={styles.loginText}>Please sign in to continue.</Text>
           <Text style={[styles.loginText,{fontSize:12}]}>***default password: Test!23</Text>
 
-          {/* Login Form */}
           <TextInput
             style={styles.input}
             placeholderTextColor={'#b3b1b1'}

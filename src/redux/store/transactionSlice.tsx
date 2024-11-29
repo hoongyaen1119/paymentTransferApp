@@ -9,6 +9,7 @@ interface Transaction {
   status: string;
   customer: string;
   created: string;
+  recipientName: string
 }
 
 interface TransactionState {
@@ -31,7 +32,8 @@ const transactionSlice = createSlice({
         description: transaction.description,
         status: transaction.status,
         customer: transaction.customer,
-        created: transaction.created
+        created: transaction.created,
+        recipientName: transaction.metadata.recipient_name
       }));
       state.transactions = mappedTransactions;
     },

@@ -35,7 +35,13 @@ export const createPaymentMethod = async(card_details,createPaymentMethod) => {
 }
 
 export const submitPayment = (paymentIntentId: string,paymentMethodId: string,customerId: string) => async (dispatch: Dispatch) => {
-  let rslt = await Service.confirmPayment(paymentIntentId,paymentMethodId)
+  let params = {}
+  if(paymentMethodId){
+    params = {
+      payment_method: paymentMethodId
+    }
+  }
+  let rslt = await Service.confirmPayment(paymentIntentId,params)
   if(rslt.error){
     return rslt
   }else{
@@ -46,6 +52,7 @@ export const submitPayment = (paymentIntentId: string,paymentMethodId: string,cu
 
 export const fetchAllPayment = (customerId: string) => async (dispatch: Dispatch) => {
   let rslt = await Service.getAllPaymentIntent(customerId)
+  console.log("rsltrsltrslt",rslt[0])
   if(rslt.error){
     return rslt
   }else{

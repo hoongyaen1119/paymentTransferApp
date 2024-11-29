@@ -31,10 +31,10 @@ const AddCardScreen = () => {
 
   const handleSubmit = async() => {
     console.log("creditCardDetailscreditCardDetails",creditCardDetails)
-    if (!creditCardDetails) {
-      Alert.alert('Please enter all the required fields');
-      return;
-    }
+    // if (!creditCardDetails) {
+    //   Alert.alert('Please enter all the required fields');
+    //   return;
+    // }
     setLoading(true)
     let paymentMethodId = await Action.createPaymentMethod(creditCardDetails,createPaymentMethod)
     if(paymentMethodId){
@@ -46,7 +46,6 @@ const AddCardScreen = () => {
   };
 
   const handleCardChange = (cardDetails) => {
-    console.log("sakdbsakjbdkasd",cardDetails)
     setCreditCardDetails(cardDetails);
   };
 
@@ -54,7 +53,7 @@ const AddCardScreen = () => {
     <SafeAreaView style={styles.container}>
       <CustomHeader
         title="Credit / Debit Card"
-        leftIcon="arrow-back-ios"
+        leftIcon="arrow-back"
         onLeftPress={() => navigation.goBack()}
         iconType={"MaterialIcons"}
       />
